@@ -18,10 +18,21 @@ def get_historical_data(tickers, months=13):
     end_date = datetime.today()
     start_date = end_date - relativedelta(months=months)
     
-    data = yf.download(tickers, start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d'))['Adj Close']
+    # yfinance 데이터 다운로드
+    df = yf.download(tickers, start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d'))
     
-    # 월말 데이터만 추출
-    monthly_data = data.resample('M').last()
+    # [수정된 부분] yfinance 최신 버전에 대응하기 위한 예외 처리
+    try:
+        data = df['Adj Close']
+    except KeyError:
+        data = df['Close']
+    
+    # [수정된 부분] 월말 데이터 추출 (최신 pandas 'ME' 권장, 구버전은 'M')
+    try:
+        monthly_data = data.resample('ME').last()
+    except ValueError:
+        monthly_data = data.resample('M').last()
+        
     return monthly_data
 
 # 3. 모멘텀 계산 함수
